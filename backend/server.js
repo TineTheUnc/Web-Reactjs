@@ -10,7 +10,7 @@ import multer from "multer"
 import fs from "fs/promises"
 import path from "path"
 
-dotenv.config({path:'./Secret_data/.env'})
+dotenv.config()
 const { APP_Port, MySQL_UserName, MySQL_Password, MySQL_Host, MySQL_Port, MySQL_DBName, Rounds, secret } = process.env;
 const configdb = {
     port: MySQL_Port,
