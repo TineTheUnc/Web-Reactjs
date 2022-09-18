@@ -1,4 +1,4 @@
 node_modules
 frontend\node_module
 backend\node_modules
-backend\data.env
+backend\Secret_data
