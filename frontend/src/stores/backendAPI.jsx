@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 export const backendAPI = createApi({
     reducerPath: 'backend',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:8000/'
+        baseUrl: 'http://localhost:8080/'
     }),
     endpoints: (builder) => ({
         getRandomPassword: builder.query({

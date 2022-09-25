@@ -1,12 +1,12 @@
-import { Button, Nav, Navbar, Container } from 'react-bootstrap'
+import { Nav, Navbar, Container } from 'react-bootstrap'
 import React, { useState, useContext, useEffect } from 'react'
-import { UserContext } from './App.jsx'
-import { useGetUserQuery } from "./stores/backendAPI";
+import { UserContext } from '../App.jsx'
+import { useGetUserQuery } from "../stores/backendAPI";
 
 function NavBar() {
     const [navbar, setNavbar] = useState(null)
     const { Secret, user, setUser, removeCookie } = useContext(UserContext);
-    const { data, error, isLoading, isError, isSuccess, refetch } = useGetUserQuery({ 'Secret': Secret });
+    const { data, isSuccess, refetch } = useGetUserQuery({ 'Secret': Secret });
     useEffect(() => {
         if (isSuccess && data.message === "Get user success") {
             setUser(data.data);
@@ -16,9 +16,9 @@ function NavBar() {
         }
     }, [data])
 
-    function logout(){
+    function logout() {
         removeCookie('user')
-        window.location.href="/"
+        window.location.href = "/"
     }
 
     useEffect(() => {

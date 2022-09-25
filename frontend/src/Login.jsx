@@ -1,40 +1,38 @@
 import { React, useState, useRef, useContext } from "react";
-import { Form, Button, Row, Col, Alert, ButtonGroup  } from 'react-bootstrap'
-import axios from 'axios';
+import { Form, Button, Row, Col, ButtonGroup } from 'react-bootstrap'
 import "./Login.css"
 import * as Icon from 'react-bootstrap-icons';
 import { UserContext } from './App.jsx'
-import { useLoginUserMutation  } from './stores/backendAPI.jsx'
+import { useLoginUserMutation } from './stores/backendAPI.jsx'
 
 
 function Login() {
-    const [ loginUser, result ] = useLoginUserMutation();
-    const { Secret, setCookie } = useContext(UserContext);
+    const [loginUser] = useLoginUserMutation();
+    const { Secret, setCookie, setError } = useContext(UserContext);
     const Email = useRef(null);
     const Password = useRef(null);
     const ConfirmPassword = useRef(null);
-    const [Error, setError] = useState(null);
-    const [Eye,setEye] = useState(<Icon.EyeSlashFill />)
+    const [Eye, setEye] = useState(<Icon.EyeSlashFill />)
 
 
-    function ShowPassword(event) {
+    function ShowPassword() {
         const input1 = document.getElementsByName("Password")[0];
         const input2 = document.getElementsByName("ConfirmPassword")[0];
         if (input1.type === "password") {
             input1.type = "text";
             input2.type = "text";
             setEye(<Icon.EyeFill />)
-        }else{
+        } else {
             input1.type = "password";
             input2.type = "password";
             setEye(<Icon.EyeSlashFill />)
         }
     }
 
-    function CkeckText(event){
-        if (event.target.value.includes(" ") || event.target.value.includes(":") || event.target.value.includes(";") || event.target.value.includes(",")){
+    function CkeckText(event) {
+        if (event.target.value.includes(" ") || event.target.value.includes(":") || event.target.value.includes(";") || event.target.value.includes(",")) {
             event.target.setCustomValidity("Can't use space or : or ; or , in your from");
-        }else{
+        } else {
             event.target.setCustomValidity("");
         }
     }
@@ -51,29 +49,19 @@ function Login() {
                         window.location.href = `/profile`
                     } else {
                         if (Object.keys(response.data.error).toString().includes("message")) {
-                            setError({"error":"500","message":"unknown error"})
+                            setError({ "error": "500", "message": "unknown error" })
                         } else {
-                            setError({"error":response.data.error,"message":response.data.message});
+                            setError({ "error": response.data.error, "message": response.data.message });
                         }
-                    }}).catch((error) => {
-                        setError({"error":"500","message":error.message});
-                    })
+                    }
+                }).catch((error) => {
+                    setError({ "error": "500", "message": error.message });
+                })
             } else {
                 const input = document.getElementsByName("Password")[0];
                 input.setCustomValidity("Password and Confirm Password does not match");
             }
         }
-    }
-    if (Error) {
-        return (
-            <div>
-                <Alert variant="danger" onClose={() => setError(null)} dismissible>
-                    <Alert.Heading><Icon.ExclamationDiamond /> {Error.error} <Icon.ExclamationDiamond /></Alert.Heading>
-                    <p>{Error.message}</p>
-                </Alert>
-            </div>
-            
-        )
     }
     return (
         <Form className="form-horizontal form" onSubmit={FormSubmit}>

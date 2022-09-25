@@ -1,25 +1,23 @@
 import { React, useState, useRef, useContext } from "react";
 import { Form, Button, Row, Col, Alert, ButtonGroup } from 'react-bootstrap'
-import axios from 'axios';
 import "./Register.css"
 import * as Icon from 'react-bootstrap-icons';
 import { UserContext } from './App.jsx'
-import { useGetRandomPasswordQuery, useCreateUserMutation, backendAPI } from './stores/backendAPI.jsx';
+import { useGetRandomPasswordQuery, useCreateUserMutation } from './stores/backendAPI.jsx';
 
 function Register() {
-    const { data, error, isLoading, isError, isSuccess, refetch } = useGetRandomPasswordQuery();
-    const [createUser, result] = useCreateUserMutation();
-    const { Secret } = useContext(UserContext);
+    const { data, error, isError, isSuccess, refetch } = useGetRandomPasswordQuery();
+    const [createUser] = useCreateUserMutation();
+    const { Secret, setError } = useContext(UserContext);
     const FirstName = useRef(null);
     const LastName = useRef(null);
     const Email = useRef(null);
     const Password = useRef(null);
     const ConfirmPassword = useRef(null);
-    const [Error, setError] = useState(null);
     const [Eye, setEye] = useState(<Icon.EyeSlashFill />)
     const [Dice, setDice] = useState({ "Number": 1, "Icon": <Icon.Dice1Fill /> })
 
-    function RandomPassword(event) {
+    function RandomPassword() {
         refetch()
         if (isSuccess) {
             const input1 = document.getElementsByName("Password")[0];
@@ -46,7 +44,7 @@ function Register() {
         }
     }
 
-    function ShowPassword(event) {
+    function ShowPassword() {
         const input1 = document.getElementsByName("Password")[0];
         const input2 = document.getElementsByName("ConfirmPassword")[0];
         if (input1.type === "password") {
@@ -74,7 +72,7 @@ function Register() {
             if (Password.current.value === ConfirmPassword.current.value) {
                 const input = document.getElementsByName("Password")[0];
                 input.setCustomValidity("")
-                createUser({ 'FirstName': FirstName.current.value, 'LastName': LastName.current.value, 'Email': Email.current.value, 'Password': Password.current.value , 'Secret': Secret }).then((response) => {
+                createUser({ 'FirstName': FirstName.current.value, 'LastName': LastName.current.value, 'Email': Email.current.value, 'Password': Password.current.value, 'Secret': Secret }).then((response) => {
                     if (response.data.messag === "Register succeed") {
                         setTimeout(() => {
                             window.location.href = "/login";
@@ -109,7 +107,7 @@ function Register() {
                 <p>{Error.message}</p>
             </Alert>
         )
-    } 
+    }
     return (
         <Form className="form-horizontal form" onSubmit={FormSubmit}>
 

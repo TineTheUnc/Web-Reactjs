@@ -1,10 +1,11 @@
 import { React, useState, useContext, useEffect, useRef } from "react";
-import { useGetUserQuery, useUpdateUserMutation,
-    useGetDefaultAvatarQuery, useGetRandomPasswordQuery, 
-    useAddPasslistMutation, useGetPasslistQuery } from "./stores/backendAPI";
-import { useDispatch, useSelector } from "react-redux";
+import {
+    useGetUserQuery, useUpdateUserMutation,
+    useGetDefaultAvatarQuery, useGetRandomPasswordQuery,
+    useAddPasslistMutation, useGetPasslistQuery
+} from "./stores/backendAPI";
 import { UserContext } from './App.jsx'
-import { Button, Nav, Navbar, Container, Alert, Card, ButtonGroup, Modal, Form, Row, Col, Image, Spinner } from 'react-bootstrap'
+import { Button, Container, Card, ButtonGroup, Modal, Form, Row, Col, Image, Spinner } from 'react-bootstrap'
 import * as Icon from 'react-bootstrap-icons';
 
 
@@ -13,10 +14,6 @@ function Profile() {
     const [EditUser, setEditUser] = useState(false)
     const [PassListShow, setPassListShow] = useState(false)
     const [PassList, setPassList] = useState(null)
-    const [PassListButton, setPassListButton] = useState([
-        
-    ])
-    const [Error, setError] = useState(null);
     const [Default, setDefault] = useState(false);
     const FirstName = useRef(null);
     const LastName = useRef(null);
@@ -33,7 +30,7 @@ function Profile() {
     const RP = useGetRandomPasswordQuery();
     const PL = useGetPasslistQuery({ 'Secret': Secret, 'Cookies': cookies['user'] })
 
-    function RandomPassword(event) {
+    function RandomPassword() {
         RP.refetch()
         if (RP.isSuccess) {
             const input = document.getElementsByName('Password')[0]
@@ -57,15 +54,9 @@ function Profile() {
         }
     }
 
-    function CoppyPassword(event) {
-        const plid = event.target.getAttribute('plid')
-        const input = document.getElementsByName("Passlist-Password-"+plid)[0]
-        input.select()
-        input.setSelectionRange(0, 99999)
-        navigator.clipboard.writeText(input.value)
-    }
 
-    function ShowPassword(event) {
+
+    function ShowPassword() {
         const input = document.getElementsByName('Password')[0]
         if (input.type === "password") {
             input.type = "text";
@@ -76,14 +67,7 @@ function Profile() {
         }
     }
 
-    function EditPasslist(event) {
-        const plid = event.target.getAttribute('plid')
-        const input1 = document.getElementsByName("Key-Password-"+plid)[0]
-        const input2 = document.getElementsByName("Passlist-Password-"+plid)[0]
-        input.select()
-        input.setSelectionRange(0, 99999)
-        navigator.clipboard.writeText(input.value)
-    }
+
 
     useEffect(() => {
         if (isError) {
@@ -106,36 +90,9 @@ function Profile() {
             setError({ "error": "500", "message": PL.error.message });
         } else if (PL.isSuccess) {
             if (PL.data.message === "Get passlist success") {
-                const pl = PL.data.data.map((passlist)=>{
-                    return(<div key={"Passlist-"+passlist.ID}>
-                        <Form className="form-horizontal form" onSubmit={FormSubmitPasslist}>
-                            <Row className="align-items-center">
-                                <Col xs="auto" className="my-1">
-                                    <Form.Label className="label" >Key:</Form.Label>
-                                </Col>
-                                <Col xs="auto" className="my-1">
-                                    <Form.Control type="text" placeholder="Key" name="Key" ref={"Passlist-Key-"+passlist.ID} maxLength="100" required onChange={CkeckText} readOnly={false} defaultValue={passlist.Key}/>
-                                </Col>
-                                <Col xs="auto" className="my-1">
-                                    <Form.Label className="label">Password:</Form.Label>
-                                </Col>
-                                <Col xs="auto" className="my-1">
-                                    <Form.Control type="password" placeholder="Password" name={"Passlist-Password-"+passlist.ID} ref={Password} maxLength="100" required onChange={CkeckText} readOnly defaultValue={passlist.Password}/>
-                                </Col>
-                                <Col xs="auto" className="my-1">
-                                    <ButtonGroup >
-                                        
-                                        
-                                        <Button type="button" name="Coppy" plid={passlist.ID} onClick={CoppyPassword} ><Icon.CircleSquare/></Button>
-                                        <Button type="button" name="edit" plid={passlist.ID}><Icon.PencilSquare/></Button>
-                                            
-                                        
-                                    </ButtonGroup>
-                                </Col>
-                            </Row>
-                        </Form>
-                    </div>)
-                    })
+                const pl = PL.data.data.map((passlist) => {
+                    return ()
+                })
                 setPassList(pl)
                 console.log(pl)
             } else {
@@ -167,7 +124,7 @@ function Profile() {
         }
     }
 
-    function deleteAvatar(event) {
+    function deleteAvatar() {
         setAvatarImage(<Image src={DA.data.data}></Image>)
         setDefault(true)
     }
@@ -225,46 +182,8 @@ function Profile() {
         }
     }
 
-    async function FormSubmitPasslist(event) {
-        event.preventDefault();
-        const input = document.getElementsByName("Password")[0];
-        if (Password.current.value && Key.current.value) {
-            input.setCustomValidity("Please input all");
-            addPasslist({ 'Key': Key.current.value, 'Password': Password.current.value, 'Secret': Secret, 'Cookies': cookies['user'] }).then((response) => {
-                if (response.data.message === "Add Passlist succeed") {
-                    PL.refetch()
-                } else {
-                    if (Object.keys(response.data.error).toString().includes("message")) {
-                        console.error(response.data.error)
-                        setError({ "error": "500", "message": "unknown error" })
-                    } else {
-                        if (Object.keys(response.data.error).length === 0) {
-                            setError({ "error": "500", "message": response.data.message });
-                        } else {
-                            setError({ "error": response.data.error, "message": response.data.message });
-                        }
-                    }
-                }
-            }).catch((error) => {
-                console.error(error)
-                setError({ "error": "500", "message": error.message });
-            })
-        } else {
-            input.setCustomValidity("Please input all");
-        }
-    }
 
-    if (Error) {
-        return (
-            <div>
-                <Alert variant="danger" onClose={() => setError(null)} dismissible>
-                    <Alert.Heading><Icon.ExclamationDiamond /> {Error.error} <Icon.ExclamationDiamond /></Alert.Heading>
-                    <p>{Error.message}</p>
-                </Alert>
-            </div>
-        )
-
-    } else if (user) {
+    if (user) {
         return (
             <div>
                 <Container>
