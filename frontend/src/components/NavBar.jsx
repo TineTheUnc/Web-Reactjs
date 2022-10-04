@@ -17,16 +17,16 @@ function NavBar() {
     }, [data])
 
     function logout() {
-        removeCookie('user')
         window.location.href = "/"
+        removeCookie('user')
     }
 
     useEffect(() => {
         if (user) {
-            setNavbar(<Nav.Link key="/logout" href="/" onClickCapture={logout} >Logout</Nav.Link>)
+            setNavbar(<Nav.Link key="logout" href="/" onClickCapture={logout} >Logout</Nav.Link>)
         } else {
             setNavbar([<Nav.Link key="/register" href="/register">Register</Nav.Link>,
-            <Nav.Link key="/login" href="/login" >Login</Nav.Link>])
+            <Nav.Link key="login" href="/login" >Login</Nav.Link>])
         }
     }, [user])
 

@@ -1,5 +1,5 @@
 import { React, useState, useRef, useContext } from "react";
-import { Form, Button, Row, Col, Alert, ButtonGroup } from 'react-bootstrap'
+import { Form, Button, Row, Col, ButtonGroup } from 'react-bootstrap'
 import "./Register.css"
 import * as Icon from 'react-bootstrap-icons';
 import { UserContext } from './App.jsx'
@@ -100,14 +100,7 @@ function Register() {
             input.setCustomValidity("Please input all");
         }
     }
-    if (Error) {
-        return (
-            <Alert variant="danger" onClose={() => setError(null)} dismissible>
-                <Alert.Heading><Icon.ExclamationDiamond /> {Error.error} <Icon.ExclamationDiamond /></Alert.Heading>
-                <p>{Error.message}</p>
-            </Alert>
-        )
-    }
+    
     return (
         <Form className="form-horizontal form" onSubmit={FormSubmit}>
 
@@ -144,7 +137,7 @@ function Register() {
                 </ButtonGroup>
             </Row>
 
-            <Button type="submit">Submit</Button>
+            <Button type="submit" variant="success">Submit</Button>
 
         </Form>
     )

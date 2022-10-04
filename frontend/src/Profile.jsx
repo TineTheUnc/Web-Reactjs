@@ -7,13 +7,15 @@ import {
 import { UserContext } from './App.jsx'
 import { Button, Container, Card, ButtonGroup, Modal, Form, Row, Col, Image, Spinner } from 'react-bootstrap'
 import * as Icon from 'react-bootstrap-icons';
+import PassTodo from './components/PassTodo'
 
 
 function Profile() {
-    const { Secret, user, setUser, cookies } = useContext(UserContext);
+    const { Secret, user, setUser, cookies,setError } = useContext(UserContext);
     const [EditUser, setEditUser] = useState(false)
     const [PassListShow, setPassListShow] = useState(false)
-    const [PassList, setPassList] = useState(null)
+    const [PassListElement, setPassListElement] = useState(null)
+    const [KeyList, setKeyList] = useState([])
     const [Default, setDefault] = useState(false);
     const FirstName = useRef(null);
     const LastName = useRef(null);
@@ -23,8 +25,8 @@ function Profile() {
     const [AvatarImage, setAvatarImage] = useState(false)
     const { data, error, isLoading, isError, isSuccess, refetch } = useGetUserQuery({ 'Secret': Secret, 'Cookies': cookies['user'] })
     const DA = useGetDefaultAvatarQuery()
-    const [updateUser, resultU] = useUpdateUserMutation()
-    const [addPasslist, resultP] = useAddPasslistMutation()
+    const [updateUser] = useUpdateUserMutation()
+    const [addPasslist] = useAddPasslistMutation()
     const [Eye, setEye] = useState(<Icon.EyeSlashFill />)
     const [Dice, setDice] = useState({ "Number": 1, "Icon": <Icon.Dice1Fill /> })
     const RP = useGetRandomPasswordQuery();
@@ -50,6 +52,8 @@ function Profile() {
                 setDice({ "Number": 1, "Icon": <Icon.Dice1Fill /> })
             }
         } else if (RP.isError) {
+            setEditUser(false)
+            setPassListShow(false)
             setError({ "error": "500", "message": error.message })
         }
     }
@@ -71,14 +75,22 @@ function Profile() {
 
     useEffect(() => {
         if (isError) {
+            setEditUser(false)
+            setPassListShow(false)
             setError({ "error": "500", "message": error.message });
         } else if (isSuccess) {
             if (data.message === "Get user success") {
                 setUser(data.data);
+            } else if (data.message === "No token found") {
+                window.location="/login"
             } else {
                 if (Object.keys(data.error).toString().includes("message")) {
+                    setEditUser(false)
+                    setPassListShow(false)
                     setError({ "error": "500", "message": "unknown error" })
                 } else {
+                    setEditUser(false)
+                    setPassListShow(false)
                     setError({ "error": data.error, "message": data.message });
                 }
             }
@@ -87,18 +99,27 @@ function Profile() {
 
     useEffect(() => {
         if (PL.isError) {
+            setEditUser(false)
+            setPassListShow(false)
             setError({ "error": "500", "message": PL.error.message });
         } else if (PL.isSuccess) {
             if (PL.data.message === "Get passlist success") {
                 const pl = PL.data.data.map((passlist) => {
-                    return ()
+                    setKeyList(Key => [...Key,passlist.Key])
+                    return <PassTodo key={"Passlist-"+ passlist.ID} Refetch={PL.refetch}  passlist={passlist}/>
                 })
-                setPassList(pl)
-                console.log(pl)
+                setPassListElement(pl)
+            } else if (PL.data.message === "No passlist found") {
+                setKeyList([null])
+                setPassListElement(null)
             } else {
                 if (Object.keys(PL.data.error).toString().includes("message")) {
+                    setEditUser(false)
+                    setPassListShow(false)
                     setError({ "error": "500", "message": "unknown error" })
                 } else {
+                    setEditUser(false)
+                    setPassListShow(false)
                     setError({ "error": PL.data.error, "message": PL.data.message });
                 }
             }
@@ -125,6 +146,8 @@ function Profile() {
     }
 
     function deleteAvatar() {
+        const input = document.getElementsByName("Avatar")[0]
+        input.value = null
         setAvatarImage(<Image src={DA.data.data}></Image>)
         setDefault(true)
     }
@@ -135,26 +158,72 @@ function Profile() {
         setAvatarImage(<Image src={url}></Image>)
     }
 
-    const toBase64 = file => new Promise((resolve, reject) => {
+    
+    function getBase64(file) {
+    return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.resultU);
+        reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
     });
+    }
+
+    async function SubmitAddPasslist(event) {
+        event.preventDefault();
+        const input = document.getElementsByName("Key")[0];
+        if (Password.current.value && Key.current.value) {
+            input.setCustomValidity("");
+            console.log(KeyList)
+            if (!KeyList.includes(Key.current.value)) {
+                addPasslist({ 'Key': Key.current.value, 'Password': Password.current.value, 'Secret': Secret, 'Cookies': cookies['user'] }).then((response) => {
+                    if (response.data.message === "Add Passlist succeed") {
+                        PL.refetch()
+                    } else {
+                        if (Object.keys(response.data.error).toString().includes("message")) {
+                            console.error(response.data.error)
+                            setEditUser(false)
+                            setPassListShow(false)
+                            setError({ "error": "500", "message": "unknown error" })
+                        } else {
+                            if (Object.keys(response.data.error).length === 0) {
+                                setEditUser(false)
+                                setPassListShow(false)
+                                setError({ "error": "500", "message": response.data.message });
+                            } else {
+                                setEditUser(false)
+                                setPassListShow(false)
+                                setError({ "error": response.data.error, "message": response.data.message });
+                            }
+                        }
+                    }
+                }).catch((error) => {
+                    console.error(error)
+                    setEditUser(false)
+                    setPassListShow(false)
+                    setError({ "error": "500", "message": error.message });
+                })
+            } else {
+                input.setCustomValidity("This Key already exists");
+            }
+        } else {
+            input.setCustomValidity("Please input all");
+        }
+    }
 
     async function FormSubmitUser(event) {
         event.preventDefault();
         var avatar = null
-        if (Avatar.current.value) {
-            avatar = await toBase64(Avatar.current.files[0])
+        if (Default) {
+            console.log(avatar)
+            avatar = DA.data.data
         } else {
-            if (Default) {
-                avatar = DA.data.data
+            if (Avatar.current.files.length>0) {
+                avatar = await getBase64(Avatar.current.files[0])
             } else {
                 avatar = user.Avatar
             }
         }
-        const input = document.getElementsByName("Email")[0];
+        const input = document.getElementsByName("FirstName")[0];
         if (FirstName.current.value && LastName.current.value && avatar) {
             input.setCustomValidity("Please input all");
             updateUser({ 'FirstName': FirstName.current.value, 'LastName': LastName.current.value, 'Avatar': avatar, 'Secret': Secret, 'Cookies': cookies['user'] }).then((response) => {
@@ -164,17 +233,25 @@ function Profile() {
                 } else {
                     if (Object.keys(response.data.error).toString().includes("message")) {
                         console.error(response.data.error)
+                        setEditUser(false)
+                        setPassListShow(false)
                         setError({ "error": "500", "message": "unknown error" })
                     } else {
                         if (Object.keys(response.data.error).length === 0) {
+                            setEditUser(false)
+                            setPassListShow(false)
                             setError({ "error": "500", "message": response.data.message });
                         } else {
+                            setEditUser(false)
+                            setPassListShow(false)
                             setError({ "error": response.data.error, "message": response.data.message });
                         }
                     }
                 }
             }).catch((error) => {
                 console.error(error)
+                setEditUser(false)
+                setPassListShow(false)
                 setError({ "error": "500", "message": error.message });
             })
         } else {
@@ -206,6 +283,8 @@ function Profile() {
                 <Modal show={EditUser} onHide={() => setEditUser(false)} size="lg"
                     aria-labelledby="Edit-User"
                     centered
+                    backdrop="static"
+                    keyboard={false}
                 >
                     <Modal.Header closeButton>
                         <Modal.Title>Edit Profile</Modal.Title>
@@ -235,7 +314,7 @@ function Profile() {
                             </Row>
                             <Row>
                                 <ButtonGroup className="mb-3" >
-                                    <Button type="submit" >Submit</Button>
+                                    <Button type="submit" variant="success">Submit</Button>
                                 </ButtonGroup>
                             </Row>
                         </Form>
@@ -244,14 +323,17 @@ function Profile() {
 
                 <Modal show={PassListShow} fullscreen={true} onHide={() => setPassListShow(false)}
                     aria-labelledby="Pass-List"
+                    backdrop="static"
+                    keyboard={false}
                 >
                     <Modal.Header closeButton>
                         <Modal.Title>Password List</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
-                        {PassList}
+                        {PassListElement}
+                        <hr/>
                         <div key="Passlist-Add">
-                            <Form className="form-horizontal form" onSubmit={FormSubmitPasslist}>
+                            <Form className="form-horizontal form" onSubmit={SubmitAddPasslist}>
                                 <Row className="align-items-center">
                                     <Col xs="auto" className="my-1">
                                         <Form.Label className="label" >Key:</Form.Label>
@@ -269,7 +351,7 @@ function Profile() {
                                         <ButtonGroup >
                                             <Button type="button" name="ShowPassword" onClick={ShowPassword} >{Eye}</Button>
                                             <Button type="button" name="RandomPassword" onClick={RandomPassword} >{Dice.Icon}</Button>
-                                            <Button type="submit" >Submit</Button>
+                                            <Button type="submit" variant="success">Submit</Button>
                                         </ButtonGroup>
                                     </Col>
                                 </Row>

@@ -8,6 +8,7 @@ import Login from './Login.jsx'
 import Profile from './Profile.jsx'
 import { createContext } from 'react'
 import { useCookies } from 'react-cookie'
+import ShowError from './components/ShowError'
 
 const UserContext = createContext();
 const Secret = "Tine_DEV_28102548_0123456789__"
@@ -18,8 +19,15 @@ function App() {
   const [Error, setError] = useState(null);
 
   if (Error) {
+    console.log(Error)
     return (
-      <div>Error</div>
+      <UserContext.Provider value={{ Error, setError }}>
+        <div className="App">
+          <header className="App-header">
+            <ShowError/>
+          </header>
+        </div>
+      </UserContext.Provider>
     )
   } else {
     return (

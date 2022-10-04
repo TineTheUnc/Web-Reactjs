@@ -1,84 +1,89 @@
-import { React, useState, useContext, useEffect, useRef } from "react";
-import { Button, ButtonGroup, Form, Row, Col } from 'react-bootstrap'
+import { React, useRef, useState, useContext } from "react";
+import { Button, ButtonGroup, Form, Row, Col, Modal } from 'react-bootstrap'
+import { useDeletePasslistMutation } from "./../stores/backendAPI.jsx"
+import * as Icon from 'react-bootstrap-icons'
 import { UserContext } from '../App.jsx'
 
+
 function PassTodo(props) {
-    const { Secret, cookies, setError } = useContext(UserContext);
-    const [passlist] = props
+    const {cookies, Secret, setError} = useContext(UserContext);
+    const { passlist, Refetch } = props
     const Password = useRef(null);
+    const [deletePasslist] = useDeletePasslistMutation()
     const Key = useRef(null);
-    const PL = useGetPasslistQuery({ 'Secret': Secret, 'Cookies': cookies['user'] })
+    const [DeleteButtonShow, setDeleteButtonShow] = useState(false);
 
+    
 
-    // function EditPasslist(event) {
-    //     const plid = event.target.getAttribute('plid')
-    //     const input1 = document.getElementsByName("Key-Password-" + plid)[0]
-    //     const input2 = document.getElementsByName("Passlist-Password-" + plid)[0]
-    //     input1.select()
-    //     input1.setSelectionRange(0, 99999)
-    //     navigator.clipboard.writeText(input1.value)
-    // }
-
-    async function FormSubmit(event) {
-        event.preventDefault();
-        const input = document.getElementsByName("Password")[0];
-        if (Password.current.value && Key.current.value) {
-            input.setCustomValidity("Please input all");
-            addPasslist({ 'Key': Key.current.value, 'Password': Password.current.value, 'Secret': Secret, 'Cookies': cookies['user'] }).then((response) => {
-                if (response.data.message === "Add Passlist succeed") {
-                    PL.refetch()
+    async function DeletePasslistButton() {
+        deletePasslist({ 'ID': passlist.ID, "Secret": Secret , "Cookies": cookies['user']}).then((response) => {
+            if (response.data.message == "Delete Passlist succeed") {
+                setDeleteButtonShow(false)
+                Refetch()
+            } else {
+                if (Object.keys(response.data.error).toString().includes("message")) {
+                    console.error(response.data.error)
+                    setDeleteButtonShow(false)
+                    setError({ "error": "500", "message": "unknown error" })
                 } else {
-                    if (Object.keys(response.data.error).toString().includes("message")) {
-                        console.error(response.data.error)
-                        setError({ "error": "500", "message": "unknown error" })
+                    if (Object.keys(response.data.error).length === 0) {
+                        setDeleteButtonShow(false)
+                        setError({ "error": "500", "message": response.data.message });
                     } else {
-                        if (Object.keys(response.data.error).length === 0) {
-                            setError({ "error": "500", "message": response.data.message });
-                        } else {
-                            setError({ "error": response.data.error, "message": response.data.message });
-                        }
+                        setDeleteButtonShow(false)
+                        setError({ "error": response.data.error, "message": response.data.message });
                     }
                 }
-            }).catch((error) => {
-                console.error(error)
-                setError({ "error": "500", "message": error.message });
-            })
-        } else {
-            input.setCustomValidity("Please input all");
-        }
+            }
+        }).catch((error) => {
+            console.error(error)
+            setDeleteButtonShow(false)
+            setError({ "error": "500", "message": error.message });
+        })
     }
 
     function CoppyPassword(event) {
         const plid = event.target.getAttribute('plid')
         const input = document.getElementsByName("Passlist-Password-" + plid)[0]
-        input.select()
-        input.setSelectionRange(0, 99999)
         navigator.clipboard.writeText(input.value)
     }
     return (
         <div key={"Passlist-" + passlist.ID}>
-            <Form className="form-horizontal form" onSubmit={FormSubmit}>
+            <Form className="form-horizontal form">
                 <Row className="align-items-center">
                     <Col xs="auto" className="my-1">
                         <Form.Label className="label" >Key:</Form.Label>
                     </Col>
                     <Col xs="auto" className="my-1">
-                        <Form.Control type="text" placeholder="Key" name={"Passlist-Key-" + passlist.ID} maxLength="100" required onChange={CkeckText} readOnly={false} defaultValue={passlist.Key} />
+                        <Form.Control type="text" placeholder="Key" name={"Passlist-Key-" + passlist.ID} maxLength="100" ref={Key} required  readOnly defaultValue={passlist.Key} />
                     </Col>
                     <Col xs="auto" className="my-1">
                         <Form.Label className="label">Password:</Form.Label>
                     </Col>
                     <Col xs="auto" className="my-1">
-                        <Form.Control type="password" placeholder="Password" name={"Passlist-Password-" + passlist.ID} ref={Password} maxLength="100" required onChange={CkeckText} readOnly defaultValue={passlist.Password} />
+                        <Form.Control type="password" placeholder="Password" name={"Passlist-Password-" + passlist.ID} ref={Password} maxLength="100" required readOnly defaultValue={passlist.Password} />
                     </Col>
                     <Col xs="auto" className="my-1">
                         <ButtonGroup >
-                            <Button type="button" name="Coppy" plid={passlist.ID} onClick={CoppyPassword} ><Icon.CircleSquare /></Button>
-                            <Button type="button" name="edit" plid={passlist.ID}><Icon.PencilSquare /></Button>
+                            <Button type="button" name="Coppy" key="CoppyButton" plid={passlist.ID} onClick={CoppyPassword} ><Icon.CircleSquare /></Button>
+                            <Button type="button" name="delete" key="DeleteButton" plid={passlist.ID} variant="danger" onClick={() => setDeleteButtonShow(true)}><Icon.TrashFill /></Button>
                         </ButtonGroup>
                     </Col>
                 </Row>
             </Form>
+
+            <Modal show={DeleteButtonShow} backdrop="static" keyboard={false} centered>
+                <Modal.Header >
+                    <Modal.Title className="text-center">ถามความมั้นใจ</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="text-center">
+                    <h1>คุณแน่ใจหรือไม่ที่จะลบรายการนี้</h1>
+                    <ButtonGroup >
+                        <Button type="button" name="edit" plid={passlist.ID} variant="success" onClick={DeletePasslistButton}>ตกลง</Button>
+                        <Button type="button" name="edit" plid={passlist.ID} variant="danger" onClick={()=>setDeleteButtonShow(false)}>ยกเลิก</Button>
+                    </ButtonGroup>
+                </Modal.Body>
+            </Modal>
         </div>
     )
 }

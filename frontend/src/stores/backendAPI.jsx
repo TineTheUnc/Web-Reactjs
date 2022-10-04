@@ -84,6 +84,16 @@ export const backendAPI = createApi({
                 method: 'POST',
                 body: JSON.stringify(data),
             })
+        }),
+        deletePasslist: builder.mutation({
+            query: (data) => ({
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                url: '/deletePasslist',
+                method: 'POST',
+                body: JSON.stringify(data),
+            })
         })
     })
 })
@@ -96,5 +106,6 @@ export const {
     useUpdateUserMutation,
     useGetDefaultAvatarQuery,
     useAddPasslistMutation,
-    useGetPasslistQuery
+    useGetPasslistQuery,
+    useDeletePasslistMutation
 } = backendAPI

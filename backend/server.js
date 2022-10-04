@@ -221,10 +221,17 @@ app.post("/getPasslist", jsonParser, async (req, res) => {
                         message: "No passlist found",
                     });
                 } else {
-                    return res.json({ message: "Get passlist success", data: result });
+                    const NewResult = result.map((r) => {
+                        let p = Buffer.from(r.Password, 'base64')
+                        p = p.toString('ascii')
+                        r.Password = p
+                        return r
+                    })
+                    return res.json({ message: "Get passlist success", data: NewResult });
                 }
             })
             .catch((err) => {
+                console.log(err)
                 return res.json({ error: err, message: "Get passlist fail" });
             });
     }
@@ -237,6 +244,8 @@ app.post("/addPasslist", jsonParser, async (req, res) => {
     } else {
         if (Object.keys(req.body).toString() == "Key,Password,Secret,Cookies") {
             const data = jwt.verify(TOKEN, req.body.Secret);
+            req.body.Password = Buffer.from(req.body.Password)
+            req.body.Password = req.body.Password.toString('base64');
             const DB = await pool.getConnection();
             await DB.beginTransaction();
             await DB.query(
@@ -250,6 +259,37 @@ app.post("/addPasslist", jsonParser, async (req, res) => {
                 })
                 .catch((err) => {
                     return res.json({ error: err, message: "Add Passlist fail" });
+                });
+        } else {
+            console.log(req.body);
+            return res.json({
+                error: "Invalid Request",
+                message: "Data keys missing or exceeded.",
+            });
+        }
+    }
+});
+
+app.post("/deletePasslist", jsonParser, async (req, res) => {
+    const TOKEN = req.body.Cookies;
+    if (!TOKEN) {
+        res.json({ error: "Invalid Request", message: "No token found" });
+    } else {
+        if (Object.keys(req.body).toString() == "ID,Secret,Cookies") {
+            const data = jwt.verify(TOKEN, req.body.Secret);
+            const DB = await pool.getConnection();
+            await DB.beginTransaction();
+            await DB.query(
+                "DELETE FROM passlist WHERE ID= ? AND user_ID = ?;",
+                [req.body.ID, data.id]
+            )
+                .then(async () => {
+                    await DB.commit();
+                    await DB.release();
+                    return res.json({ message: "Delete Passlist succeed" });
+                })
+                .catch((err) => {
+                    return res.json({ error: err, message: "Delete Passlist fail" });
                 });
         } else {
             console.log(req.body);
